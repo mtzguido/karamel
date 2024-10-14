@@ -1,0 +1,18 @@
+[
+  "\u000b›Hì%É\u0004)’Ê<⁄ˆG‚\u001d",
+  [
+    [
+      "Rust4.f",
+      1,
+      2,
+      1,
+      [
+        "@query", "equation_FStar.HyperStack.ST.equal_stack_domains",
+        "equation_FStar.Monotonic.Heap.equal_dom",
+        "lemma_FStar.HyperStack.ST.lemma_same_refs_in_stack_regions_intro"
+      ],
+      0,
+      "af6324d28a35e0960277d5e74ddd7a67"
+    ]
+  ]
+]
