@@ -39,12 +39,8 @@ include Makefile.include
 #   inline_for_extraction in the presence of interfaces
 # - --cache_checked_modules to rely on a pre-built ulib and krmllib
 # - --cache_dir, to avoid polluting our generated build artifacts outside o
-ifdef FSTAR_HOME
-  FSTAR_EXE=$(FSTAR_HOME)/bin/fstar.exe
-else
-  FSTAR_EXE=fstar.exe
-endif
 
+FSTAR_EXE ?= $(shell which fstar.exe)
 FSTAR_NO_FLAGS = $(FSTAR_EXE) \
   --odir obj --cache_checked_modules $(FSTAR_INCLUDES) --cmi \
   --already_cached 'Prims FStar LowStar C Spec.Loops TestLib WasmSupport A' --warn_error '+241@247+285' \
@@ -59,6 +55,8 @@ FSTAR_NO_FLAGS = $(FSTAR_EXE) \
 FSTAR_ROOTS = $(wildcard $(addsuffix /*.fsti,$(SOURCE_DIRS))) \
   $(wildcard $(addsuffix /*.fst,$(SOURCE_DIRS))) \
 
+# FIXME: Why did I only need this now?!
+FSTAR_EXTRACT := --extract '* -FStar'
 
 # This is the only bulletproof way that I know of forcing a regeneration of the
 # .depend file every single time. Why, you may ask? Well, it's frequent enough
