@@ -215,6 +215,11 @@ let detect_fstar () =
     KPrint.bprintf "%s⚙ KaRaMeL will drive F*.%s Here's what we found:\n" Ansi.blue Ansi.reset;
 
   begin try
+    let r = Sys.getenv "FSTAR_EXE" in
+    if not !Options.silent then
+      KPrint.bprintf "read FSTAR_EXE via the environment\n";
+    fstar := r
+  with Not_found -> try
     let r = Sys.getenv "FSTAR_HOME" in
     if not !Options.silent then
       KPrint.bprintf "read FSTAR_HOME via the environment\n";
@@ -226,7 +231,7 @@ let detect_fstar () =
     if not !Options.silent then
       KPrint.bprintf "FSTAR_HOME is %s (via fstar.exe in PATH)\n" !fstar_home
   with _ ->
-    fatal_error "Did not find fstar.exe in PATH and FSTAR_HOME is not set"
+    fatal_error "Did not find fstar.exe in PATH and FSTAR_HOME and FSTAR_EXE are not set"
   end;
 
   let fstar_ulib = !fstar_home ^^ "ulib" in
