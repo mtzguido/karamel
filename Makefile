@@ -22,21 +22,16 @@ endif
 
 all: minimal krmllib
 
-ifdef FSTAR_HOME
-  OCAMLPATH:=$(OCAMLPATH)$(OCAMLPATH_SEP)$(FSTAR_HOME)/lib
+FSTAR_EXE ?= $(shell which fstar.exe)
+
+ifneq ($(FSTAR_EXE),)
+  OCAMLPATH:=$(OCAMLPATH)$(OCAMLPATH_SEP)$(shell $(FSTAR_EXE) --locate_ocaml)
 else
-  FSTAR_EXE=$(shell which fstar.exe)
-  ifneq ($(FSTAR_EXE),)
-    FSTAR_HOME=$(dir $(FSTAR_EXE))/..
-    OCAMLPATH:=$(OCAMLPATH)$(OCAMLPATH_SEP)$(FSTAR_HOME)/lib
-  else
-    # If we are just trying to do a minimal build, we don't need F*.
-    ifneq ($(MAKECMDGOALS),minimal)
-      $(error "fstar.exe not found, please install FStar")
-    endif
+  # If we are just trying to do a minimal build, we don't need F*.
+  ifneq ($(MAKECMDGOALS),minimal)
+    $(error "fstar.exe not found, please install FStar and put it in your PATH (or set FSTAR_EXE)")
   endif
 endif
-export FSTAR_HOME
 export OCAMLPATH
 
 minimal: lib/AutoConfig.ml lib/Version.ml
@@ -74,8 +69,8 @@ test: all
 
 # Auto-detection
 pre:
-	@ocamlfind query fstar.lib >/dev/null 2>&1 || \
-	  { echo "Didn't find fstar.lib via ocamlfind or in FSTAR_HOME (which is: $(FSTAR_HOME)); run $(MAKE) -C $(FSTAR_HOME)"; exit 1; }
+	@ocamlfind query fstar_lib >/dev/null 2>&1 || \
+	  { echo "Didn't find fstar_lib via ocamlfind; is F* properlly installed? (FSTAR_EXE = $(FSTAR_EXE))"; exit 1; }
 
 
 install: all
