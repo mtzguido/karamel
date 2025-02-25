@@ -960,7 +960,9 @@ and mk_stmts m stmts: C.stmt list =
 
 and mk_index m (e1: expr) (e2: expr): C.expr =
   match e2 with
-  | Qualified (["C"], "_zero_for_deref") ->
+  | Qualified (["C"], "_zero_for_deref")
+  | Constant (_, "0")
+   ->
       mk_deref m e1
   | _ ->
     begin match mk_expr m e2 with
