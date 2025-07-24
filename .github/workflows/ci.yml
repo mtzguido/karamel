@@ -15,10 +15,15 @@ defaults:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container: mtzguido/dev-base
     steps:
-      - run: echo "HOME=/home/user" >> $GITHUB_ENV
-      - uses: mtzguido/set-opam-env@master
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
 
       - uses: actions/checkout@master
         id: checkout-fstar
@@ -47,16 +52,10 @@ jobs:
           key: FStar-${{ runner.os }}-${{ runner.arch }}-${{ steps.checkout-fstar.outputs.commit }}
 
       - run: echo "FSTAR_EXE=$(pwd)/FStar/bin/fstar.exe" >> $GITHUB_ENV
-      - run: echo "FSTAR_HOME=$(pwd)/FStar" >> $GITHUB_ENV
-      - run: echo "PATH=$(pwd)/FStar/bin:$PATH" >> $GITHUB_ENV
 
       - uses: actions/checkout@master
         with:
           path: karamel
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
 
       - run: echo "KRML_HOME=$(pwd)/karamel" >> $GITHUB_ENV
 
