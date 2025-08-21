@@ -343,6 +343,7 @@ and p_expr' curr = function
       p_stmts stmts
   | CxxInitializerList init ->
       p_init init
+  | ESkip -> empty
 
 (* statement-level comment *)
 and p_comment s =
@@ -431,7 +432,6 @@ and p_stmt (s: stmt) =
       let init = match decl with
         | `Decl decl -> p_declaration decl
         | `Expr expr -> p_expr expr
-        | `Skip -> empty
       in
       group (string "for" ^/^ lparen ^^ nest 2 (
         init ^^ semi ^^ break1 ^^
