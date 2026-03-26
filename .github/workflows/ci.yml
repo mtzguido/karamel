@@ -275,3 +275,36 @@ jobs:
       - run: .scripts/publish_tutorial.sh
         env:
           DZOMO_GITHUB_TOKEN: ${{secrets.DZOMO_GITHUB_TOKEN}}
+
+  # Minimal build test. Note: not required for ciok
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        ocaml-compiler:
+          - 4.14.3
+          - 5.1.1
+          - 5.2.1
+          - 5.3.0
+          - 5.4.1
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup ocaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - uses: actions/checkout@master
+
+      - name: Install dependencies, sans F*
+        run: |
+          eval $(opam env)
+          opam update
+          sed -i '/fstar/d' karamel.opam
+          opam install --deps-only karamel.opam
+
+      - name: Build
+        run: |
+          eval $(opam env)
+          make minimal -skj$(nproc)
