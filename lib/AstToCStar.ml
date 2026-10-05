@@ -209,6 +209,23 @@ let whitelisted_tapp e =
 
 let no_return_type_lids = ref []
 
+(* A break in a nested loop or switch does not exit the loop being inspected.
+   At this stage loop conditions and switch scrutinees are C expressions. *)
+let breaks_loop = (object
+  inherit [_] reduce
+  method private zero = false
+  method private plus = (||)
+  method! visit_EBreak _ = true
+  method! visit_EWhile _ _ _ = false
+  method! visit_EFor _ _ _ _ _ _ = false
+  method! visit_ESwitch _ _ _ = false
+end)#visit_expr_w ()
+
+let non_fallthrough_loop e =
+  match e.node with
+  | EWhile ({ node = EBool true; _ }, body) -> not (breaks_loop body)
+  | _ -> false
+
 (* For field names, we simply avoid keywords. This is potentially incorrect, e.g. a record with fields
    `switch` and `switch0` would see both fields mapped to the same name. Ideally, we would maintain a
    global mapping of fields (per type), just like we do for enums -- see lib/Simplify.ml,
@@ -659,11 +676,17 @@ and mk_stmts env e ret_type =
         end
 
     | ESequence es ->
-        let n = List.length es in
-        KList.fold_lefti (fun i (_, acc) e ->
-          let return_pos = if i = n - 1 then return_pos else Not in
-          collect (env, acc) return_pos e
-        ) (env, (comment e.meta @ acc)) es
+        let rec collect_sequence acc = function
+          | [] -> env, acc
+          | [e] -> collect (env, acc) return_pos e
+          | e :: es ->
+              let _, acc = collect (env, acc) Not e in
+              (* Tail-call lowering needs a typed abort after its unit-valued
+                 infinite loop. C does not: no path reaches this continuation. *)
+              if non_fallthrough_loop e then env, acc
+              else collect_sequence acc es
+        in
+        collect_sequence (comment e.meta @ acc) es
 
     | EAssign (e1, _) when is_array e1.typ ->
         assert false
