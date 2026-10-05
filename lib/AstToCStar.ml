@@ -226,6 +226,15 @@ let non_fallthrough_loop e =
   | EWhile ({ node = EBool true; _ }, body) -> not (breaks_loop body)
   | _ -> false
 
+let negate_loop_guard (e: CStar.expr): CStar.expr = match e with
+  | CStar.Bool b -> CStar.Bool (not b)
+  | CStar.Call (CStar.Op K.Not, [e]) -> e
+  | CStar.Call (CStar.Op ((K.Eq | K.Neq) as op), es) ->
+      CStar.Call (CStar.Op (K.comp_neg op), es)
+  (* Do not complement ordered comparisons: the operands may be floating-point
+     values, for which !(x < y) and x >= y differ on NaNs. *)
+  | e -> CStar.Call (CStar.Op K.Not, [e])
+
 (* For field names, we simply avoid keywords. This is potentially incorrect, e.g. a record with fields
    `switch` and `switch0` would see both fields mapped to the same name. Ideally, we would maintain a
    global mapping of fields (per type), just like we do for enums -- see lib/Simplify.ml,
@@ -564,8 +573,22 @@ and mk_stmts env e ret_type =
         collect (env, acc) return_pos e2
 
     | EWhile (e1, e2) ->
-        let e' = CStar.While (mk_expr env false false e1, mk_block env Not e2) in
-        env, maybe_return (e' :: comment e.meta @ acc)
+        let cond = mk_expr env false false e1 in
+        let body = mk_block env Not e2 in
+        let acc = comment e.meta @ acc in
+        (* A leading return guard can become the loop condition. An escaping
+           break would bypass that return in the original loop, so retain the
+           original shape in that case. Matching C* also excludes #if guards. *)
+        begin match cond, body with
+        | CStar.Bool true, [CStar.IfThenElse (false, guard, [CStar.Return _ as ret], body)]
+          when not (breaks_loop e2) ->
+            env, ret :: CStar.While (negate_loop_guard guard, body) :: acc
+        | CStar.Bool true, [CStar.IfThenElse (false, guard, body, [CStar.Return _ as ret])]
+          when not (breaks_loop e2) ->
+            env, ret :: CStar.While (guard, body) :: acc
+        | _ ->
+            env, maybe_return (CStar.While (cond, body) :: acc)
+        end
 
     | EFor (binder,
       ({ node = EConstant ((K.UInt32 | K.SizeT), init as k_init); _ } as e_init),

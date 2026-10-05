@@ -17,3 +17,8 @@ let rec countdown (n: U32.t): Tot U32.t (decreases U32.v n) =
 let rec swap (n x y: U32.t): Tot U32.t (decreases U32.v n) =
   if n = 0ul then x
   else swap (U32.sub n 1ul) y x
+
+(* Unit-valued returns use the same guard transformation. *)
+let rec countdown_unit (n: U32.t): Div unit =
+  if n = 0ul then ()
+  else countdown_unit (U32.sub n 1ul)
