@@ -149,6 +149,38 @@ jobs:
           export KRML_LIBDIR=$(pwd)/krmllib
           make -kj$(nproc) -C krmllib/dist/generic -f Makefile.basic
 
+  build-krmllib-msvc:
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        arch: [x86, x64]
+        uint128: [default, verified]
+    defaults:
+      run:
+        shell: cmd
+    env:
+      CL: /nologo /std:c11 /W3 /O2 ${{ matrix.uint128 == 'verified' && '/DKRML_VERIFIED_UINT128' || '' }}
+    steps:
+      - uses: actions/checkout@master
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Build the checked-in krmllib
+        run: |
+          mkdir build-msvc
+          cd build-msvc
+          cl /c /I..\include /I..\krmllib\dist\generic ..\krmllib\dist\generic\*.c || exit /b 1
+          lib /nologo /out:krmllib.lib *.obj
+
+      - name: Test uint128 (generic)
+        run: |
+          cl /Iinclude /Ikrmllib\dist\generic /Fobuild-msvc\uint128.obj /Febuild-msvc\uint128.exe test\uint128.c && build-msvc\uint128.exe
+
+      - name: Test uint128 (minimal)
+        run: |
+          cl /Iinclude /Ikrmllib\dist\minimal /Fobuild-msvc\uint128.obj /Febuild-msvc\uint128.exe test\uint128.c && build-msvc\uint128.exe
+
   build-and-test-pulse:
     runs-on: ubuntu-latest
     needs: build-deps
@@ -232,6 +264,7 @@ jobs:
       - build-and-test
       - build-and-test-pulse
       - build-krmllib
+      - build-krmllib-msvc
       - test-eurydice
     steps:
       # Note: this only runs when a dependency fails. If they all succeed,

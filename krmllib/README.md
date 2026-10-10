@@ -71,20 +71,19 @@ For clients that wish to use a verified uint128 implementation from C, the
 `dist/uint128` directory contains a self-contained, standalone implementation of
 `FStar.UInt128`. It must be compiled with `-DKRML_VERIFIED_UINT128`.
 
-In the event that the target platform does not support `unsigned __int128`, this
-implementation can be used in lieu of `dist/{generic,minimal}/FStar_UInt128.h`
-and `dist/{generic,minimal}/fstar_uint128.h`.
+The same implementation is included as `FStar_UInt128_Verified.h` in
+`dist/generic` and `dist/minimal`. Defining `KRML_VERIFIED_UINT128` selects it
+through `krml/internal/types.h`, representing a uint128 as two `uint64_t` fields,
+`low` and `high`. It is also selected automatically on platforms without a native
+uint128 implementation, including 32-bit MSVC. Here, "verified" refers to the
+F* implementation from which the C arithmetic was extracted.
 
 ### An unverified, MSVC-specific FStar.UInt128 implementation
 
-The implementation of `FStar.UInt128` in the default build relies on `unsigned
-__int128`, a GCC/Clang-specific extension. In the event that one should wish to
-build with MSVC, it suffices to use `dist/generic/fstar_uint128_msvc.c` instead
-of `dist/generic/fstar_uint128.c`.  The `fstar_uint128_msvc.c` file relies on
-compiler intrinsics, unless `KRML_VERIFIED_UINT128` is defined, in which case it
-uses the slow, verified implementation (see immediately above).
+On 64-bit MSVC, `krml/internal/types.h` automatically selects
+`fstar_uint128_msvc.h`, which uses `__m128i` and compiler intrinsics. Defining
+`KRML_VERIFIED_UINT128` instead selects the verified implementation described
+above. Both headers are included in `dist/generic` and `dist/minimal`.
 
 No Makefile is provided for this build configuration, but the user might wish to
 take inspiration from https://github.com/project-everest/mitls-fstar/blob/master/src/windows/krmllib/makefile.vs
-
-One can also use `fstar_uint128_msvc.c` in the `minimal` build configuration.
