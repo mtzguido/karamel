@@ -189,6 +189,9 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            substituters = https://cache.nixos.org?priority=0
 
       # Cache builds in this repository's GitHub Actions cache.
       - name: Setup Magic Nix Cache
@@ -205,6 +208,9 @@ jobs:
     steps:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            substituters = https://cache.nixos.org?priority=0
 
       # Cache Eurydice and its dependencies in this repository's GitHub Actions cache.
       - name: Setup Magic Nix Cache
@@ -217,7 +223,7 @@ jobs:
         run: |
           nix build -L --no-link \
             "github:AeneasVerif/eurydice#checks.x86_64-linux.default" \
-            --override-input karamel "github:FStarLang/karamel/$GITHUB_SHA"
+            --override-input karamel "github:$GITHUB_REPOSITORY/$GITHUB_SHA"
 
   # A single no-op job to use for branch protection
   ciok:
